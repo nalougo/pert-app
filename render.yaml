@@ -1,13 +1,10 @@
 services:
+  # Backend Laravel
   - type: web
     name: pert-backend
-    env: php
+    env: docker
     rootDir: backend-pert
-    buildCommand: |
-      composer install --no-dev --optimize-autoloader
-      php artisan key:generate
-      php artisan config:cache
-    startCommand: php artisan serve --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: APP_ENV
         value: production
@@ -15,3 +12,25 @@ services:
         value: false
       - key: APP_URL
         value: https://pert-backend.onrender.com
+      - key: APP_KEY
+        sync: false  # À ajouter manuellement
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 3306
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+
+  # Frontend (si React/Vue/Angular)
+  - type: web
+    name: pert-frontend
+    env: static
+    rootDir: frontend-pert
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build  # ou ./dist selon votre framework
