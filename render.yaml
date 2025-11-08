@@ -1,10 +1,11 @@
 services:
-  # Backend Laravel
+  # Backend Laravel avec stockage JSON local
   - type: web
     name: pert-backend
     env: docker
     rootDir: backend-pert
     dockerfilePath: ./Dockerfile
+    plan: free
     envVars:
       - key: APP_ENV
         value: production
@@ -13,24 +14,19 @@ services:
       - key: APP_URL
         value: https://pert-backend.onrender.com
       - key: APP_KEY
-        sync: false  # À ajouter manuellement
+        sync: false
       - key: DB_CONNECTION
-        value: mysql
-      - key: DB_HOST
-        sync: false
-      - key: DB_PORT
-        value: 3306
-      - key: DB_DATABASE
-        sync: false
-      - key: DB_USERNAME
-        sync: false
-      - key: DB_PASSWORD
-        sync: false
+        value: sqlite
+      - key: SESSION_DRIVER
+        value: file
+      - key: CACHE_DRIVER
+        value: file
 
-  # Frontend (si React/Vue/Angular)
+  # Frontend
   - type: web
     name: pert-frontend
     env: static
     rootDir: frontend-pert
     buildCommand: npm install && npm run build
-    staticPublishPath: ./build  # ou ./dist selon votre framework
+    staticPublishPath: ./build
+    plan: free
