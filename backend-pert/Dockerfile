@@ -1,36 +1,44 @@
 FROM richarvey/nginx-php-fpm:3.1.6
 
-# Copier les fichiers de l'application
+# Copier les fichiers
 COPY . /var/www/html
 
-# Définir le répertoire de travail
 WORKDIR /var/www/html
 
-# Installer les dépendances Composer
+# Installer les dépendances
 RUN composer install --no-dev --optimize-autoloader
 
-# Donner les permissions
+# Permissions
 RUN chown -R nginx:nginx /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Configurer Nginx pour Laravel
-RUN echo 'server {\n\
-    listen ${PORT};\n\
-    root /var/www/html/public;\n\
-    index index.php index.html;\n\
-    location / {\n\
-        try_files $uri $uri/ /index.php?$query_string;\n\
-    }\n\
-    location ~ \.php$ {\n\
-        fastcgi_pass 127.0.0.1:9000;\n\
-        fastcgi_index index.php;\n\
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;\n\
-        include fastcgi_params;\n\
-    }\n\
-}' > /etc/nginx/sites-available/default.conf
+# Configuration Nginx pour Laravel
+RUN rm -f /etc/nginx/sites-enabled/default.conf && \
+    echo 'server {' > /etc/nginx/sites-enabled/default.conf && \
+    echo '    listen 8080;' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '    server_name _;' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '    root /var/www/html/public;' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '    index index.php index.html;' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '    location / {' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '        try_files $uri $uri/ /index.php?$query_string;' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '    }' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '    location ~ \.php$ {' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '        fastcgi_pass 127.0.0.1:9000;' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '        fastcgi_index index.php;' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '        include fastcgi_params;' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '    }' >> /etc/nginx/sites-enabled/default.conf && \
+    echo '}' >> /etc/nginx/sites-enabled/default.conf
 
 # Script de démarrage
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+RUN echo '#!/bin/sh' > /start-laravel.sh && \
+    echo 'php artisan config:cache' >> /start-laravel.sh && \
+    echo 'php artisan route:cache' >> /start-laravel.sh && \
+    echo 'php artisan view:cache' >> /start-laravel.sh && \
+    echo 'php-fpm -D' >> /start-laravel.sh && \
+    echo 'nginx -g "daemon off;"' >> /start-laravel.sh && \
+    chmod +x /start-laravel.sh
 
-CMD ["/start.sh"]
+CMD ["/start-laravel.sh"]
