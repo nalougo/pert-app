@@ -6,8 +6,11 @@ import { Button } from "./components/ui/button";
 import { AlertCircle, CheckCircle2, Play, Loader2 } from "lucide-react";
 import axios from "axios";
 
-// URL de l'API Laravel
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+// URL de l'API Laravel - utilise la variable d'environnement VITE_API_URL
+// En production sur Vercel, cette variable doit être définie avec l'URL de votre backend Render
+const API_URL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/api` 
+  : "http://localhost:8000/api";
 
 interface Task {
   id: string;
