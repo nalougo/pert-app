@@ -45,13 +45,19 @@ export function TaskInput({ tasks, onTasksChange, t0, onT0Change }: TaskInputPro
     const predecessors = newTaskPredecessors
       .split(',')
       .map(p => p.trim().toUpperCase())
-      .filter(p => p.length > 0);
+      .filter(p => p.length > 0)
+      .filter(p => p !== taskId); // Exclure les auto-dépendances
 
-    // Vérifier que tous les antécédents existent
+    // Avertir si des antécédents n'existent pas encore, mais permettre l'ajout
     const invalidPreds = predecessors.filter(p => !tasks.some(t => t.id === p));
     if (invalidPreds.length > 0) {
-      alert(`Les antécédents suivants n'existent pas: ${invalidPreds.join(', ')}`);
-      return;
+      const shouldContinue = window.confirm(
+        `Les antécédents suivants n'existent pas encore: ${invalidPreds.join(', ')}. ` +
+        `Vous pourrez les ajouter plus tard. Voulez-vous continuer ?`
+      );
+      if (!shouldContinue) {
+        return;
+      }
     }
 
     const newTask: Task = {
@@ -109,26 +115,47 @@ export function TaskInput({ tasks, onTasksChange, t0, onT0Change }: TaskInputPro
         <div className="space-y-2">
           <h3 className="font-medium">Tâches existantes ({tasks.length})</h3>
           <div className="max-h-60 overflow-y-auto space-y-2">
-            {tasks.map(task => (
-              <div key={task.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <span className="font-medium">{task.id}</span>
-                  <span className="text-gray-600 ml-2">Durée: {task.duration} jours</span>
-                  {task.predecessors.length > 0 && (
-                    <span className="text-gray-600 ml-2">
-                      Antécédents: {task.predecessors.join(', ')}
-                    </span>
-                  )}
+            {tasks.map(task => {
+              // Vérifier les prédécesseurs manquants
+              const missingPreds = task.predecessors.filter(
+                pred => !tasks.some(t => t.id === pred)
+              );
+              const validPreds = task.predecessors.filter(
+                pred => tasks.some(t => t.id === pred)
+              );
+              
+              return (
+                <div key={task.id} className={`flex items-center gap-3 p-3 rounded-lg ${
+                  missingPreds.length > 0 ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'
+                }`}>
+                  <div className="flex-1">
+                    <span className="font-medium">{task.id}</span>
+                    <span className="text-gray-600 ml-2">Durée: {task.duration} jours</span>
+                    {task.predecessors.length > 0 && (
+                      <div className="mt-1 text-sm">
+                        {validPreds.length > 0 && (
+                          <span className="text-gray-600">
+                            Antécédents: <span className="text-green-600 font-medium">{validPreds.join(', ')}</span>
+                          </span>
+                        )}
+                        {missingPreds.length > 0 && (
+                          <span className="text-yellow-600 ml-2">
+                            (Manquants: <span className="font-medium">{missingPreds.join(', ')}</span>)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => removeTask(task.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => removeTask(task.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+              );
+            })}
             {tasks.length === 0 && (
               <p className="text-gray-500 text-center py-4">Aucune tâche. Ajoutez-en une ci-dessous.</p>
             )}
@@ -161,13 +188,14 @@ export function TaskInput({ tasks, onTasksChange, t0, onT0Change }: TaskInputPro
               />
             </div>
             <div>
-              <Label htmlFor="predecessors">Antécédents</Label>
+              <Label htmlFor="predecessors">Antécédents </Label>
               <Input
                 id="predecessors"
-                placeholder="Ex: A, B"
+                placeholder="Ex: A, B (peut être ajouté plus tard)"
                 value={newTaskPredecessors}
                 onChange={(e) => setNewTaskPredecessors(e.target.value)}
               />
+          
             </div>
           </div>
           <Button onClick={addTask} className="w-full">
