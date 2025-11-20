@@ -34,6 +34,9 @@ RUN rm -f /etc/nginx/sites-enabled/default.conf && \
 
 # Script de démarrage
 RUN echo '#!/bin/sh' > /start-laravel.sh && \
+    echo 'php artisan config:clear' >> /start-laravel.sh && \
+    echo 'php artisan cache:clear' >> /start-laravel.sh && \
+    echo 'php artisan route:clear' >> /start-laravel.sh && \
     echo 'php artisan config:cache' >> /start-laravel.sh && \
     echo 'php artisan route:cache' >> /start-laravel.sh && \
     echo 'php artisan view:cache' >> /start-laravel.sh && \
